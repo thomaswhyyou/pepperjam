@@ -9,6 +9,7 @@ gem 'mongoid', github: 'mongoid/mongoid'
 gem 'rails_12factor', group: :production
 gem 'iconv'
 gem 'will_paginate_mongoid'
+gem 'newrelic_rpm'
 
 group :development, :test do
   gem 'launchy'
