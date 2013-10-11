@@ -1,0 +1,24 @@
+<form accept-charset="UTF-8" action="/" method="get">
+  <p>Status:</p>
+  <select name="filter[status]" style="width: 100px">
+    <option value=""></option>
+    <option value="Joined">Joined</option>
+    <option value="Applied">Applied</option>
+    <option value="Invited">Invited</option>
+    <option value="Revoked by publisher">Revoked by publisher</option>
+    <option value="Revoked by advertiser">Revoked by advertiser</option>
+    <option value="Declined by publisher">Declined by publisher</option>
+    <option value="Declined by advertiser">Declined by advertiser</option>
+    <option value="No relationship">No relationship</option>
+  </select>
+  <br>
+  <br>
+  <p>KW Bidding Policy:</p>
+  <select name="filter[bidding]" style="width: 100px">
+    <option value=""></option>
+    <option value="Allowed">Allowed</option>
+    <option value="Prohibited">Prohibited</option>
+  </select>
+  <br><br>
+  <input class="btn btn-primary" type="submit" value="Filter">
+</form>

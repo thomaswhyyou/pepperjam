@@ -1,0 +1,15 @@
+<p class="lead">Terms</p>
+<% @selected_program.offer_terms.each do |term| %>
+  <p><%= term[0] %>: <%= term[1] %></p>
+<% end %>
+<p>Note<%= @selected_program.offer_note unless @selected_program.offer_note == "" %></p>
+<% unless @selected_program.coockie_duration[0] == "" %>
+  <p>
+    <%= @selected_program.coockie_duration[0] %>: <%= @selected_program.coockie_duration[1] %>
+  </p>
+<% end %>
+<% unless @selected_program.lock_period[0] == "" %>
+  <p>
+    <%= @selected_program.lock_period[0] %>: <%= @selected_program.lock_period[1] %>
+  </p>
+<% end %>

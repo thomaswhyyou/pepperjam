@@ -3,10 +3,15 @@ require 'csv'
 namespace :scraper do
   desc "Scrape pepperjamnetwork.com for program info and scan for bidding policy"
   task pepperjam: :environment do
+    time_start = Time.now
+    start_point = 0
+
+    # Initiate a ICONV object to convert/uniform encodings to utf-8
+    encoding_converter = Iconv.new('UTF-8', 'LATIN1')
 
     # Initiate a Mechanize object, request for pepperjam site and log in with credentials.
     agent = Mechanize.new
-    target_host = 'http://www.pepperjamnetwork.com/'
+    target_host = 'http://www.pepperjamnetwork.com'
     agent.get(target_host) do |page|
       login_form = page.form_with(name: 'login') do |form|
         form.email = ENV['PEPPERJAM_UN']
@@ -23,30 +28,47 @@ namespace :scraper do
     puts "UPDATE: Total of #{prgm_ids_array.count} programs available"
 
     # Iterate thru program ids, retrieve detail information and save them into database
-    time_start = Time.now
+    scraping_count = 0
 
-    prgm_page = agent.get("#{target_host}/affiliate/program/popup?programId=#{prgm_ids_array[0]}")
-    desc_page = agent.get("#{target_host}/affiliate/program/description?programId=#{prgm_ids_array[0]}")
-    header = prgm_page.search('.program-header')
-    tabcontents = prgm_page.search('.tab-content')
+    prgm_ids_array.count.times do |i|
+      prgm_url = "#{target_host}/affiliate/program/popup?programId=#{prgm_ids_array[i]}"
+      prgm_page = agent.get(prgm_url)
+      desc_page = agent.get("#{target_host}/affiliate/program/description?programId=#{prgm_ids_array[i]}")
 
-    puts prgm_id =              prgm_ids_array[0]
-    puts company_name =         header.css('.program-name').text.gsub(/^\s+|\s+$/, "")
-    puts logo_img =             header.css('.logo div img').first.attributes['src'].value
-    puts site_address =         header.css('.websiteurl').text()
-    puts categories =           header.css('.base-info div')[1].children[2].text.gsub(/^\s+|\s+$/, "")
-    puts mobile_tracking =      header.css('.base-info div')[2].children[2].text.gsub(/^\s+|\s+$/, "")
-    puts status =               header.css('.current-status').first.children.first.text.gsub!("Your Status: ", "")
-    puts description =          desc_page.search('span').first.text
-    puts contact_info =         organize_contact_info(tabcontents[1].css('div'))
-    puts offer_terms =          organize_offer_terms(tabcontents[2])
-    puts offer_note =           tabcontents[2].css('.note').text
-    puts coockie_duration =     organize_term_options(tabcontents[2], 0, 1)
-    puts lock_period =          organize_term_options(tabcontents[2], 2, 3)
-    puts promo_methods =        organize_promo_methods(tabcontents[3])
-    puts suggested_keywords =   tabcontents[4].children[2].text.gsub(/^\s+|\s+$/, "")
-    puts restricted_keywords =  tabcontents[4].children[4].text.gsub(/^\s+|\s+$/, "")
-    puts bidding_policy =       check_policy(company_name, description, restricted_keywords)
+      # Shortcuts
+      header = prgm_page.search('.program-header')
+      tabcontents = prgm_page.search('.tab-content')
+
+      # Variables used to calculate other properties
+      company_name = header.css('.program-name').text.gsub(/^\s+|\s+$/, "")
+      description = desc_page.search('.pd_desc').text.gsub(/^\s+|\s+$/, "")
+      restricted_keywords = check_capture_keywords(encoding_converter, tabcontents[4], "Restricted Keywords:")
+
+      Program.create(
+        prgm_count:           i + 1,
+        prgm_id:              prgm_ids_array[i],
+        prgm_url:             prgm_url,
+        company_name:         company_name,
+        logo_url:             check_capture_logo_url(header),
+        site_address:         header.css('.websiteurl').text(),
+        categories:           header.css('.base-info div')[1].children[2].text.gsub(/^\s+|\s+$/, ""),
+        mobile_tracking:      header.css('.base-info div')[2].children[2].text.gsub(/^\s+|\s+$/, ""),
+        status:               check_capture_status(header),
+        description:          description,
+        contact_info:         organize_contact_info(tabcontents[1].css('div')),
+        offer_terms:          organize_offer_terms(tabcontents[2]),
+        offer_note:           tabcontents[2].css('.note').text,
+        coockie_duration:     organize_term_options(tabcontents[2], "Cookie Duration:"),
+        lock_period:          organize_term_options(tabcontents[2], "Lock Period:"),
+        promo_methods:        organize_promo_methods(tabcontents[3]),
+        suggested_keywords:   check_capture_keywords(encoding_converter, tabcontents[4], "Suggested Keywords:"),
+        restricted_keywords:  restricted_keywords,
+        bidding_policy:       check_policy(company_name, description, restricted_keywords)
+      )
+
+      scraping_count += 1
+      puts "Scraping.. total of #{scraping_count} so far."
+    end
 
     # Console logs for monitoring
     time_finished = Time.now
@@ -70,17 +92,25 @@ end
 
 def organize_offer_terms(raw_object)
   offer_array = []
-  raw_object.css('.pd_left').count.times do |i|
-    offer_array << [raw_object.css('.pd_left')[i].text.gsub(/^\s+|\s+$/, ""),
-                    raw_object.css('.pd_right')[i].text.gsub(/^\s+|\s+$/, "")]
+  if raw_object.css('.pd_left').count != 0
+    raw_object.css('.pd_left').count.times do |i|
+      offer_array << [raw_object.css('.pd_left')[i].text.gsub(/^\s+|\s+$/, ""),
+                      raw_object.css('.pd_right')[i].text.gsub(/^\s+|\s+$/, "")]
+    end
+  else
+    link_to_details = "http://www.pepperjamnetwork.com/" + raw_object.css('.yellow_bld')[0].attributes['href'].value
+    offer_array << ["Link for details", link_to_details]
   end
   return offer_array
 end
 
-def organize_term_options(raw_object, option_div_index, term_div_index)
-  term_options_array = [raw_object.css('.pd_block')[1].css('div')[option_div_index].text.gsub(/^\s+|\s+$/, ""),
-                        raw_object.css('.pd_block')[1].css('div')[term_div_index].text.gsub(/^\s+|\s+$/, "")]
-  return term_options_array
+def organize_term_options(raw_object, option_label)
+  if raw_object.search("[text()*=\"#{option_label}\"]").count == 0
+    return ["", ""]
+  else
+    option_term = raw_object.search("[text()*=\"#{option_label}\"]").first.parent.next_element.text.gsub(/^\s+|\s+$/, "")
+    return [option_label, option_term]
+  end
 end
 
 def organize_promo_methods(raw_object)
@@ -90,6 +120,33 @@ def organize_promo_methods(raw_object)
   end
   return promo_methods_array
 end
+
+def check_capture_logo_url(raw_object)
+  if raw_object.css('.logo div img').empty?
+    return "n/a"
+  else
+    return raw_object.css('.logo div img').first.attributes['src'].value
+  end
+end
+
+def check_capture_status(raw_object)
+  if raw_object.css('.current-status').empty?
+    return "n/a"
+  else
+    return raw_object.css('.current-status').first.children.first.text.gsub!("Your Status: ", "")
+  end
+end
+
+def check_capture_keywords(converter_object, raw_object, label_text)
+  if raw_object.search("[text()*=\"#{label_text}\"]").empty?
+    return "n/a"
+  else
+    raw_text = raw_object.search("[text()*=\"#{label_text}\"]").first.next.text
+    processed_text = converter_object.iconv(raw_text)
+    return processed_text.gsub(/^\s+|\s+$/, "")
+  end
+end
+
 
 #############################################################################################
 # Helper Functions - Scanner
@@ -121,7 +178,7 @@ def check_policy(company_name, description, restricted_keywords)
 
   # Step 4: Interpret as an implied positive if not caught by none of the above
   else
-    return [:prohibited, "implied-pos"]
+    return [:allowed, "implied-pos"]
   end
 end
 
@@ -167,3 +224,6 @@ def check_implied_neg(text_for_scan)
   end
   return detected_indicator
 end
+
+
+

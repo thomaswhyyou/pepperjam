@@ -1,0 +1,34 @@
+<div class='container' id='main-wrapper'>
+  <p>Created for DFV Code Challenge | Submitted by: <a href="http://twitter.com/thomaswhyyou/">Thomas Yu</a></p>
+  <h1>ebay Enterprise: Advertisers Summary List</h1>
+  <hr>
+  <div class="col-xs-6 col-sm-2 left-sidebar">
+    <p class="labelhead">Filters</p>
+    <%= render partial: 'filter_form' %>
+  </div>
+
+  <div class="col-xs-12 col-sm-10">
+    <%= render partial: 'notification' %>
+
+    <div class='digg_pagination'>
+      <div class="page_info">
+        <%= page_entries_info @selected_programs %>
+        <% if @total_count %>
+          (out of <%= @total_count %>)
+        <% end %>
+      </div>
+    </div>
+
+    <table class="table table-condensed table-hover">
+      <thead>
+        <%= render partial: 'table_labels' %>
+      </thead>
+      <tbody>
+        <%= render partial: 'table_row' %>
+      </tbody>
+    </table>
+    <div class='digg_pagination'>
+      <%= will_paginate @selected_programs %>
+    </div>
+  </div>
+</div>

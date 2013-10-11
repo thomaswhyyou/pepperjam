@@ -1,0 +1,16 @@
+<% @selected_programs.each do |program| %>
+<tr>
+  <td><%= program.prgm_count %></td>
+  <td><%= program.prgm_id %></td>
+  <td><%= truncate(program.company_name) %></td>
+  <td><%= program.status %></td>
+  <td class="<%= program.bidding_policy[1] %>"><%= program.bidding_policy[0].to_s.titleize %></td>
+  <td>
+    <a data-toggle="modal" href="/<%= program.prgm_id %>" data-target="#myModal">View</a> |
+    <a href="<%= program.prgm_url %>" target='_blank'>Source</a>
+  </td>
+</tr>
+<% end %>
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+</div><!-- /.modal -->

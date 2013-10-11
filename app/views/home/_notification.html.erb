@@ -1,0 +1,13 @@
+<% if @applied_filters %>
+<div class="alert alert-info">
+  Filters currently applied:
+  <% unless @applied_filters["status"].empty? %>
+    <u>Status: <%= @applied_filters["status"] %>,</u>
+  <% end %>
+  <% unless @applied_filters["bidding"].empty? %>
+    <u>Bidding Policy: <%= @applied_filters["bidding"] %></u>
+  <% end %>
+  <a href="/" class="remove-btn">REMOVE FILTER</a>
+</div>
+<% end %>
+

@@ -1,0 +1,21 @@
+<div class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h4 class="modal-title"><%= @selected_program.company_name %> (ID: <%= @selected_program.prgm_id %>)</h4>
+    </div>
+    <div class="modal-body">
+      <%= render partial: 'header_info' %><hr>
+      <%= render partial: 'description' %><hr>
+      <%= render partial: 'contact_info' %><hr>
+      <%= render partial: 'terms' %><hr>
+      <%= render partial: 'promo_methods' %><hr>
+      <%= render partial: 'keywords' %><hr>
+      <%= render partial: 'bidding_policy' %>
+    </div>
+    <div class="modal-footer">
+      <a href="<%= @selected_program.prgm_url %>" class="btn btn-info" target="_blank">Go to Source</a>
+    </div>
+  </div><!-- /.modal-content -->
+</div>
+

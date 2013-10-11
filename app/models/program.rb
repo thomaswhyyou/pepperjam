@@ -2,9 +2,11 @@ class Program
   include Mongoid::Document
   include Mongoid::Timestamps
 
+  field :prgm_count,          type: Integer
   field :prgm_id,             type: Integer
+  field :prgm_url,            type: String
   field :company_name,        type: String
-  field :logo_img,            type: String
+  field :logo_url,            type: String
   field :site_address,        type: String
   field :categories,          type: String
   field :mobile_tracking,     type: String
